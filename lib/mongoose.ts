@@ -1,25 +1,41 @@
-import mongoose from "mongoose";
+import mongoose, { ConnectionOptions } from "mongoose";
 
-let isConnected = false; // Variable to track the connection status
+let isConnected = false;
 
 export const connectToDB = async () => {
-  // Set strict query mode for Mongoose to prevent unknown field queries.
-  mongoose.set("strictQuery", true);
+	mongoose.set("strictQuery", true);
 
-  if (!process.env.MONGODB_URL) return console.log("Missing MongoDB URL");
+	const dbConnection: string | undefined = process.env.DB_CONNECTION;
+	const dbHost: string | undefined = process.env.DB_HOST;
+	const dbPort: string | undefined = process.env.DB_PORT;
+	const dbName: string | undefined = process.env.DB_DATABASE;
+	const dbUserName: string | undefined = encodeURIComponent(
+		process.env.DB_USERNAME || ""
+	);
+	const dbPwd: string | undefined = encodeURIComponent(
+		process.env.DB_PASSWORD || ""
+	);
 
-  // If the connection is already established, return without creating a new connection.
-  if (isConnected) {
-    console.log("MongoDB connection already established");
-    return;
-  }
+	const MONGODB_URL = `${dbConnection}://${dbHost}:${dbPort}/${dbName}`;
 
-  try {
-    await mongoose.connect(process.env.MONGODB_URL);
+	if (!MONGODB_URL) return console.log("Missing MongoDB URL");
 
-    isConnected = true; // Set the connection status to true
-    console.log("MongoDB connected");
-  } catch (error) {
-    console.log(error);
-  }
+	if (isConnected) {
+		console.log("MongoDB connection already established");
+		return;
+	}
+
+	try {
+		const mongooseOptions: ConnectionOptions = {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		};
+
+		await mongoose.connect(MONGODB_URL, mongooseOptions);
+
+		isConnected = true;
+		console.log("MongoDB connected");
+	} catch (error) {
+		console.log(error);
+	}
 };
